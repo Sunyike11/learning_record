@@ -1,7 +1,11 @@
 """
+1.
 accuracy: 0.9731
 val_accuracy: 0.7333
 (过拟合？
+2.+数据增强 dropout=0.2, epochs=30
+accuracy: 0.6800
+val_accuracy: 0.7176
 """
 
 import os
@@ -51,27 +55,53 @@ total_val = num_cats_val + num_dogs_val
 batchsz = 128
 IMG_HEIGHT = 150
 IMG_WIDTH = 150
-epochs = 15
+# epochs = 15
+epochs = 30
 train_image_generator = tf.keras.preprocessing.image.ImageDataGenerator(rescale=1./255)
 validation_image_generator = tf.keras.preprocessing.image.ImageDataGenerator(rescale=1./255)
 
-train_data_gen = train_image_generator.flow_from_directory(batch_size=batchsz,
+# train_data_gen = train_image_generator.flow_from_directory(batch_size=batchsz,
+#                                                            directory=train_dir,
+#                                                            shuffle=True,
+#                                                            target_size=(IMG_HEIGHT, IMG_WIDTH),
+#                                                            class_mode='binary')
+
+# val_data_gen = validation_image_generator.flow_from_directory(batch_size=batchsz,
+#                                                               directory=validation_dir,
+#                                                               target_size=(IMG_HEIGHT, IMG_WIDTH),
+#                                                               class_mode='binary')
+
+# 对训练图像应用了重新缩放、45度旋转、宽度移动、高度移动、水平翻转和缩放增强。
+image_gen_train = tf.keras.preprocessing.image.ImageDataGenerator(
+    rescale=1. / 255,
+    rotation_range=45,
+    width_shift_range=.15,
+    height_shift_range=.15,
+    horizontal_flip=True,
+    zoom_range=0.5
+)
+train_data_gen = image_gen_train.flow_from_directory(batch_size=batchsz,
                                                            directory=train_dir,
                                                            shuffle=True,
                                                            target_size=(IMG_HEIGHT, IMG_WIDTH),
                                                            class_mode='binary')
-val_data_gen = validation_image_generator.flow_from_directory(batch_size=batchsz,
-                                                              directory=validation_dir,
-                                                              target_size=(IMG_HEIGHT, IMG_WIDTH),
-                                                              class_mode='binary')
+
+image_gen_val = tf.keras.preprocessing.image.ImageDataGenerator(rescale=1. / 255)
+val_data_gen = image_gen_val.flow_from_directory(batch_size=batchsz,
+                                                 directory=validation_dir,
+                                                 target_size=(IMG_HEIGHT, IMG_WIDTH),
+                                                 class_mode='binary')
+
 # 创建模型
 model = tf.keras.Sequential([
     layers.Conv2D(16, 3, padding='same', activation='relu', input_shape=(IMG_HEIGHT, IMG_WIDTH, 3)),
     layers.MaxPooling2D(),
+    layers.Dropout(0.2),
     layers.Conv2D(32, 3, padding='same', activation='relu'),
     layers.MaxPooling2D(),
     layers.Conv2D(64, 3, padding='same', activation='relu'),
     layers.MaxPooling2D(),
+    layers.Dropout(0.2),
     # Flatten()的作用是将输入的多维数据（通常是二维或三维数据）转换为一维数据，以便将其馈送到网络中的其他层，如全连接层。
     layers.Flatten(),
     layers.Dense(512, activation='relu'),
