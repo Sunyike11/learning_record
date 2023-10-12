@@ -8,3 +8,4 @@
   猫狗训练集-https://www.kaggle.com/c/dogs-vs-cats/data
     
     得到了过拟合（？的结果。
+    添加dropout,增加epochs。
